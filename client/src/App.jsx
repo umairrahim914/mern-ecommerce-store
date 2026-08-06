@@ -1,27 +1,27 @@
-import { useEffect, useState } from 'react';
-import axiosInstance from './api/axiosInstance';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Layout from './components/layout/Layout';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Cart from './pages/Cart';
+import PrivateRoute from './routes/PrivateRoute';
 
 function App() {
-  const [status, setStatus] = useState('Checking...');
-
-  useEffect(() => {
-    const checkServer = async () => {
-      try {
-        const response = await axiosInstance.get('/health');
-        setStatus(response.data.message);
-      } catch (error) {
-        setStatus('Failed to connect to server');
-        console.error(error);
-      }
-    };
-    checkServer();
-  }, []);
-
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>MERN E-Commerce Setup Check</h1>
-      <p>Server status: <strong>{status}</strong></p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          {/* Protected routes — must be logged in */}
+          <Route element={<PrivateRoute />}>
+            <Route path="/cart" element={<Cart />} />
+          </Route>
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
