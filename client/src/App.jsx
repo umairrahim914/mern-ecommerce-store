@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Cart from './pages/Cart';
+import ProductDetails from './pages/ProductDetails';
 import PrivateRoute from './routes/PrivateRoute';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/products/:id" element={<ProductDetails />} />
 
           {/* Protected routes — must be logged in */}
           <Route element={<PrivateRoute />}>
