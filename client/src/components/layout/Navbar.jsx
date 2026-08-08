@@ -1,8 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useCart } from '../../hooks/useCart';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { itemCount } = useCart();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -19,7 +21,7 @@ const Navbar = () => {
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
         {user ? (
           <>
-            <Link to="/cart">Cart</Link>
+            <Link to="/cart">Cart ({itemCount})</Link>
             <span>Hi, {user.name}</span>
             <button onClick={handleLogout}>Logout</button>
           </>

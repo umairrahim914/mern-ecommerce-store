@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
+import { useCart } from '../hooks/useCart';
+
 
 const ProductDetails = () => {
   const { id } = useParams();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -28,19 +31,15 @@ const ProductDetails = () => {
     fetchProduct();
   }, [id]);
 
-  const handleAddToCart = async () => {
-    setMessage('');
-    try {
-      await axiosInstance.post('/cart/items', {
-        productId: product._id,
-        variantId: selectedVariant._id,
-        quantity,
-      });
-      setMessage('Added to cart!');
-    } catch (err) {
-      setMessage(err.response?.data?.message || 'Failed to add to cart.');
-    }
-  };
+ const handleAddToCart = async () => {
+  setMessage('');
+  try {
+    await addToCart(product._id, selectedVariant._id, quantity);
+    setMessage('Added to cart!');
+  } catch (err) {
+    setMessage(err.response?.data?.message || 'Failed to add to cart.');
+  }
+};
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;

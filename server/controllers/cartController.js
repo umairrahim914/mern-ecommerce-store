@@ -1,20 +1,53 @@
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 
-// @desc    Get the logged-in user's cart
+// Shared helper: takes a raw Cart document and returns a plain object
+// with live price/stock/availability attached to every item, plus itemsTotal.
+// Used by every endpoint that returns cart data, so the shape is always consistent.
+const enrichCart = async (cart) => {
+  if (cart.items.length === 0) {
+    return { ...cart.toObject(), items: [], itemsTotal: 0 };
+  }
+
+  const uniqueProductIds = [...new Set(cart.items.map((item) => item.product.toString()))];
+  const products = await Product.find({ _id: { $in: uniqueProductIds } });
+  const productMap = new Map(products.map((p) => [p._id.toString(), p]));
+
+  const enrichedItems = cart.items.map((item) => {
+    const product = productMap.get(item.product.toString());
+    const variant = product?.variants.id(item.variantId);
+
+    return {
+      ...item.toObject(),
+      price: variant?.price ?? null,
+      availableStock: variant?.stock ?? 0,
+      isAvailable: Boolean(variant && product.isActive),
+    };
+  });
+
+  const itemsTotal = enrichedItems.reduce((sum, item) => {
+    return item.price ? sum + item.price * item.quantity : sum;
+  }, 0);
+
+  return {
+    ...cart.toObject(),
+    items: enrichedItems,
+    itemsTotal: Number(itemsTotal.toFixed(2)),
+  };
+};
+
+// @desc    Get the logged-in user's cart (enriched with live prices)
 // @route   GET /api/cart
 // @access  Private
 const getCart = async (req, res) => {
   try {
-    // findOneAndUpdate + upsert: atomically get the cart if it exists,
-    // or create an empty one if this is the user's first-ever cart access
     const cart = await Cart.findOneAndUpdate(
       { user: req.user._id },
       { $setOnInsert: { user: req.user._id, items: [] } },
-      { new: true, upsert: true }
+      { returnDocument: 'after', upsert: true }
     );
 
-    res.status(200).json(cart);
+    res.status(200).json(await enrichCart(cart));
   } catch (error) {
     res.status(500).json({ message: 'Server error fetching cart', error: error.message });
   }
@@ -34,14 +67,12 @@ const addItemToCart = async (req, res) => {
       return res.status(400).json({ message: 'Quantity must be at least 1' });
     }
 
-    // Fetch the LIVE product — never trust name/price from the client.
-    // This is the source-of-truth boundary we designed into the Cart schema.
     const product = await Product.findById(productId);
     if (!product || !product.isActive) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    const variant = product.variants.id(variantId); // Mongoose subdocument lookup by _id
+    const variant = product.variants.id(variantId);
     if (!variant) {
       return res.status(404).json({ message: 'Product variant not found' });
     }
@@ -50,23 +81,19 @@ const addItemToCart = async (req, res) => {
       return res.status(400).json({ message: `Only ${variant.stock} units available for this variant` });
     }
 
-    // Get or create the cart (same upsert pattern as getCart)
     let cart = await Cart.findOneAndUpdate(
       { user: req.user._id },
       { $setOnInsert: { user: req.user._id, items: [] } },
-      { new: true, upsert: true }
+      { returnDocument: 'after', upsert: true }
     );
 
-    // Check if this exact product+variant combo is already in the cart
     const existingItem = cart.items.find(
       (item) => item.product.toString() === productId && item.variantId.toString() === variantId
     );
 
     if (existingItem) {
-      // Increment quantity on the existing line item, don't duplicate it
       existingItem.quantity += quantity;
     } else {
-      // Push a new line item with a display snapshot (not price — see Cart schema notes)
       cart.items.push({
         product: product._id,
         variantId: variant._id,
@@ -80,7 +107,7 @@ const addItemToCart = async (req, res) => {
 
     await cart.save();
 
-    res.status(200).json(cart);
+    res.status(200).json(await enrichCart(cart));
   } catch (error) {
     res.status(500).json({ message: 'Server error adding to cart', error: error.message });
   }
@@ -107,8 +134,6 @@ const updateCartItem = async (req, res) => {
       return res.status(404).json({ message: 'Cart item not found' });
     }
 
-    // Re-validate stock against the LIVE product before allowing the update —
-    // stock may have changed since this item was first added
     const product = await Product.findById(item.product);
     const variant = product?.variants.id(item.variantId);
 
@@ -121,7 +146,7 @@ const updateCartItem = async (req, res) => {
     item.quantity = quantity;
     await cart.save();
 
-    res.status(200).json(cart);
+    res.status(200).json(await enrichCart(cart));
   } catch (error) {
     res.status(500).json({ message: 'Server error updating cart item', error: error.message });
   }
@@ -135,14 +160,14 @@ const removeCartItem = async (req, res) => {
     const cart = await Cart.findOneAndUpdate(
       { user: req.user._id },
       { $pull: { items: { _id: req.params.itemId } } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!cart) {
       return res.status(404).json({ message: 'Cart not found' });
     }
 
-    res.status(200).json(cart);
+    res.status(200).json(await enrichCart(cart));
   } catch (error) {
     res.status(500).json({ message: 'Server error removing cart item', error: error.message });
   }
