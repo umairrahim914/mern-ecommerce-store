@@ -6,6 +6,8 @@ import Register from './pages/Register';
 import Cart from './pages/Cart';
 import ProductDetails from './pages/ProductDetails';
 import PrivateRoute from './routes/PrivateRoute';
+import Checkout from './pages/Checkout';
+import OrderConfirmation from './pages/OrderConfirmation';
 
 function App() {
   return (
@@ -19,7 +21,9 @@ function App() {
 
           {/* Protected routes — must be logged in */}
           <Route element={<PrivateRoute />}>
-            <Route path="/cart" element={<Cart />} />
+            <Route path="/cart" element={<Cart />} />   
+           <Route path="/checkout" element={<Checkout />} />
+           <Route path="/order-confirmation/:id" element={<OrderConfirmation />} />
           </Route>
         </Route>
       </Routes>
