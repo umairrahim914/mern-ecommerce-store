@@ -8,6 +8,10 @@ import ProductDetails from './pages/ProductDetails';
 import PrivateRoute from './routes/PrivateRoute';
 import Checkout from './pages/Checkout';
 import OrderConfirmation from './pages/OrderConfirmation';
+import AdminRoute from './routes/AdminRoute';
+import AdminLayout from './components/layout/AdminLayout';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminOrders from './pages/admin/AdminOrders';
 
 function App() {
   return (
@@ -21,9 +25,16 @@ function App() {
 
           {/* Protected routes — must be logged in */}
           <Route element={<PrivateRoute />}>
-            <Route path="/cart" element={<Cart />} />   
-           <Route path="/checkout" element={<Checkout />} />
-           <Route path="/order-confirmation/:id" element={<OrderConfirmation />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order-confirmation/:id" element={<OrderConfirmation />} />
+          </Route>
+
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route path="products" element={<AdminProducts />} />
+              <Route path="orders" element={<AdminOrders />} />
+            </Route>
           </Route>
         </Route>
       </Routes>

@@ -22,6 +22,7 @@ const Navbar = () => {
         {user ? (
           <>
             <Link to="/cart">Cart ({itemCount})</Link>
+            {user.role === 'admin' && <Link to="/admin/products">Admin</Link>}
             <span>Hi, {user.name}</span>
             <button onClick={handleLogout}>Logout</button>
           </>

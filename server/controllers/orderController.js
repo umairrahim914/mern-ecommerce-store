@@ -147,4 +147,47 @@ const getOrderById = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, getMyOrders, getOrderById };
+// @desc    Get all orders (admin only)
+// @route   GET /api/orders
+// @access  Private/Admin
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find().populate('user', 'name email').sort({ createdAt: -1 });
+    res.status(200).json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error fetching orders', error: error.message });
+  }
+};
+
+// @desc    Update order status (admin only)
+// @route   PUT /api/orders/:id/status
+// @access  Private/Admin
+const updateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      {
+        status,
+        ...(status === 'delivered' && { isDelivered: true, deliveredAt: new Date() }),
+      },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.status(200).json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error updating order', error: error.message });
+  }
+};
+
+module.exports = { createOrder, getMyOrders, getOrderById, getAllOrders, updateOrderStatus };
