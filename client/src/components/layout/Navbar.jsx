@@ -13,28 +13,26 @@ const Navbar = () => {
   };
 
   return (
-    <nav style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid #ddd' }}>
-      <Link to="/" style={{ fontWeight: 'bold', textDecoration: 'none' }}>
-        E-Commerce Store
-      </Link>
+  <nav className="navbar">
+    <Link to="/" className="navbar-brand">E-Commerce Store</Link>
+    <div className="navbar-links">
+      {user ? (
+        <>
+          {user.role === 'admin' && <Link to="/admin/products">Admin</Link>}
+          <Link to="/cart">Cart ({itemCount})</Link>
+          <span className="text-muted">Hi, {user.name}</span>
+          <button className="btn-secondary" onClick={handleLogout}>Logout</button>
+        </>
+      ) : (
+        <>
+          <Link to="/login">Login</Link>
+          <Link to="/register">Register</Link>
+        </>
+      )}
+    </div>
+  </nav>
+);
 
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        {user ? (
-          <>
-            <Link to="/cart">Cart ({itemCount})</Link>
-            {user.role === 'admin' && <Link to="/admin/products">Admin</Link>}
-            <span>Hi, {user.name}</span>
-            <button onClick={handleLogout}>Logout</button>
-          </>
-        ) : (
-          <>
-            <Link to="/login">Login</Link>
-            <Link to="/register">Register</Link>
-          </>
-        )}
-      </div>
-    </nav>
-  );
 };
 
 export default Navbar;

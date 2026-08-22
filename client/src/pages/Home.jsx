@@ -26,11 +26,12 @@ const Home = () => {
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
-    <div>
-      <h1>Our Products</h1>
-      <ProductGrid products={products} />
-    </div>
-  );
+  <div className="page-container">
+    <h1>Our Products</h1>
+    <ProductGrid products={products} />
+  </div>
+);
+
 };
 
 export default Home;
